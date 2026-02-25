@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>興嘉國小班級聊書時光</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  
+  <style>
+    body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8f9fa; }
+    .hero-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white; padding: 40px 0; margin-bottom: 30px;
+      border-radius: 0 0 20px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.2); border-radius: 10px;
+      padding: 15px; backdrop-filter: blur(5px); text-align: center;
+    }
+    .stat-number { font-size: 2.5rem; font-weight: bold; }
+    .card-img-top { height: 200px; object-fit: cover; }
+    .nav-pills .nav-link.active { background-color: #764ba2; }
+    .nav-pills .nav-link { color: #764ba2; font-weight: 500; }
+    .loading-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.8); z-index: 9999;
+      display: none; justify-content: center; align-items: center;
+    }
+    .result-card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); transition: 0.2s; }
+    .table-hover tbody tr:hover { background-color: #f1f1f1; }
+    .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .admin-section { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .badge-method { cursor: pointer; margin-right: 5px; margin-bottom: 5px; display: inline-block; padding: 8px 12px; font-size: 0.9em;}
+    .badge-method:hover { opacity: 0.8; }
+    .badge-method i { margin-left: 5px; }
+  </style>
+</head>
+<body>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+  </div>
+
+  <div class="hero-section">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h1 class="display-6 fw-bold"><i class="bi bi-book-half"></i> 興嘉國小班級聊書時光</h1>
+          <p class="lead mb-0">Xingjia Elementary School Class Reading Time</p>
+        </div>
+        <div class="col-md-4 mt-3 mt-md-0">
+          <div class="stat-card">
+            <div>參與聊書班級數</div>
+            <div class="stat-number" id="classCount">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container pb-5">
+    
+    <ul class="nav nav-pills mb-4 justify-content-center" id="pills-tab" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active px-4" id="pills-upload-tab" data-bs-toggle="pill" data-bs-target="#pills-upload">
+          <i class="bi bi-cloud-upload"></i> 導師上傳區
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link px-4" id="pills-gallery-tab" data-bs-toggle="pill" data-bs-target="#pills-gallery">
+          <i class="bi bi-grid-fill"></i> 成果觀摩牆
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link px-4" id="pills-admin-tab" data-bs-toggle="pill" data-bs-target="#pills-admin">
+          <i class="bi bi-gear-fill"></i> 管理員專區
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="pills-tabContent">
+      <!-- 上傳區 -->
+      <div class="tab-pane fade show active" id="pills-upload">
+        <div class="row justify-content-center">
+          <div class="col-lg-8">
+            <div class="card shadow-sm">
+              <div class="card-body p-4">
+                <h4 class="card-title mb-4 text-center text-primary">填寫聊書成果</h4>
+                <form id="uploadForm">
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label class="form-label">班級 *</label>
+                      <input type="text" class="form-control" id="className" placeholder="例：701" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">實施日期 *</label>
+                      <input type="date" class="form-control" id="date" required>
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">實施方式 *</label>
+                    <select class="form-select" id="method" required>
+                      <option value="" disabled selected>載入中...</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">閱讀書目 *</label>
+                    <input type="text" class="form-control" id="bookTitle" required>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">聊書內容簡述 *</label>
+                    <textarea class="form-control" id="content" rows="4" required></textarea>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">成果照片 * (5MB內)</label>
+                    <input class="form-control" type="file" id="photoFile" accept="image/*" required>
+                  </div>
+                  <div class="mb-4">
+                    <label class="form-label">學習單 (選填)</label>
+                    <input class="form-control" type="file" id="worksheetFile" accept=".pdf,image/*">
+                  </div>
+                  <div class="d-grid"><button type="submit" class="btn btn-primary btn-lg">確認送出</button></div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 成果牆區 -->
+      <div class="tab-pane fade" id="pills-gallery">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="galleryContainer"></div>
+      </div>
+
+      <!-- 管理員專區 -->
+      <div class="tab-pane fade" id="pills-admin">
+        <div id="adminLoginScreen" class="row justify-content-center mt-5">
+          <div class="col-md-4">
+            <div class="card shadow-sm">
+              <div class="card-body text-center p-4">
+                <h4 class="mb-3"><i class="bi bi-lock"></i> 管理員登入</h4>
+                <input type="password" id="adminPassword" class="form-control mb-3" placeholder="請輸入密碼">
+                <button class="btn btn-primary w-100" onclick="performLogin()">登入</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="adminPanel" style="display:none;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">後台管理系統</h4>
+            <button class="btn btn-secondary btn-sm" onclick="logout()">登出</button>
+          </div>
+
+          <div class="admin-section">
+            <h5 class="border-bottom pb-2 mb-3"><i class="bi bi-tags-fill"></i> 實施方式管理</h5>
+            <div class="input-group mb-3">
+              <input type="text" class="form-control" id="newMethodInput" placeholder="輸入新的實施方式名稱">
+              <button class="btn btn-primary" type="button" onclick="handleAddMethod()"><i class="bi bi-plus-lg"></i> 新增</button>
+            </div>
+            <div id="methodsListContainer"><span class="text-muted">載入中...</span></div>
+          </div>
+          
+          <div class="admin-section">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="mb-0"><i class="bi bi-table"></i> 上傳資料列表</h5>
+              <button class="btn btn-success btn-sm" onclick="exportToCSV()"><i class="bi bi-file-earmark-spreadsheet"></i> 匯出 Excel</button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle table-sm" id="adminTable">
+                <thead class="table-light">
+                  <tr>
+                    <th>班級</th><th>日期</th><th>方式</th><th>書目</th><th>內容預覽</th><th>操作</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 編輯 Modal -->
+  <div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">編輯資料</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editRowIndex">
+          <div class="mb-3"><label class="form-label">班級</label><input type="text" class="form-control" id="editClass"></div>
+          <div class="mb-3"><label class="form-label">實施日期</label><input type="date" class="form-control" id="editDate"></div>
+          <div class="mb-3">
+            <label class="form-label">實施方式</label>
+            <select class="form-select" id="editMethod"></select>
+          </div>
+          <div class="mb-3"><label class="form-label">書目</label><input type="text" class="form-control" id="editBook"></div>
+          <div class="mb-3"><label class="form-label">內容</label><textarea class="form-control" id="editContent" rows="4"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-primary" onclick="submitEdit()">儲存變更</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    // ==========================================
+    // ⚠️ 請將下方的網址替換為您 Google Apps Script 部署後的「網頁應用程式 URL」
+    // ==========================================
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyUKjd_4Zmx-jeVVU-PbgbBsmVyIIEjRcVRS9_ilSQf9tYkTM_jbY61_UgMjzf3rYr1/exec"; 
+    
+    // --- 核心 API 請求函數 ---
+    async function apiCall(action, payload = null) {
+      if(!GAS_API_URL || GAS_API_URL.includes('YOUR-ID-HERE')) {
+        Swal.fire('設定錯誤', '請先在原始碼中設定 GAS_API_URL', 'error');
+        throw new Error('GAS API URL 未設定');
+      }
+
+      try {
+        let response;
+        if (payload) {
+          // POST 請求：使用 text/plain 避免 CORS preflight OPTIONS 錯誤
+          response = await fetch(GAS_API_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: action, payload: payload }),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+          });
+        } else {
+          // GET 請求
+          response = await fetch(`${GAS_API_URL}?action=${action}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('API Error:', error);
+        Swal.fire('連線錯誤', '無法連接到伺服器', 'error');
+        throw error;
+      }
+    }
+
+    // --- 主程式邏輯 ---
+    let adminDataCache = [];
+    let currentMethods = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadGalleryData();
+      loadMethods();
+    });
+
+    document.getElementById('pills-gallery-tab').addEventListener('click', loadGalleryData);
+
+    // 1. 載入實施方式
+    async function loadMethods() {
+      try {
+        const methods = await apiCall('getMethodList');
+        currentMethods = methods;
+        updateMethodDropdowns(methods);
+        renderAdminMethodsList(methods);
+      } catch(e) {}
+    }
+
+    function updateMethodDropdowns(methods) {
+      ['method', 'editMethod'].forEach(id => {
+        const el = document.getElementById(id);
+        if(!el) return;
+        const currentVal = el.value;
+        let html = '<option value="" disabled selected>請選擇...</option>';
+        methods.forEach(m => html += `<option value="${m}">${m}</option>`);
+        el.innerHTML = html;
+        if(currentVal) el.value = currentVal;
+      });
+    }
+
+    function renderAdminMethodsList(methods) {
+      const container = document.getElementById('methodsListContainer');
+      if(!container) return;
+      let html = '';
+      methods.forEach(m => {
+        html += `<span class="badge bg-secondary badge-method">${m} <i class="bi bi-x-circle-fill" onclick="handleDeleteMethod('${m}')"></i></span>`;
+      });
+      container.innerHTML = html || '<span class="text-muted">尚無資料</span>';
+    }
+
+    async function handleAddMethod() {
+      const input = document.getElementById('newMethodInput');
+      const val = input.value.trim();
+      if(!val) return;
+
+      document.getElementById('loadingOverlay').style.display = 'flex';
+      const res = await apiCall('addMethod', { methodName: val });
+      document.getElementById('loadingOverlay').style.display = 'none';
+      
+      if(res.status === 'success') {
+        input.value = '';
+        loadMethods();
+        Swal.fire({ icon: 'success', title: '新增成功', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+      } else {
+        Swal.fire('錯誤', res.message, 'error');
+      }
+    }
+
+    function handleDeleteMethod(name) {
+      Swal.fire({
+        title: `刪除 "${name}"?`,
+        text: "已使用的舊資料不會被修改，但未來無法再選擇。",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '刪除'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          document.getElementById('loadingOverlay').style.display = 'flex';
+          const res = await apiCall('deleteMethod', { methodName: name });
+          document.getElementById('loadingOverlay').style.display = 'none';
+          
+          if(res.status === 'success') {
+            loadMethods();
+            Swal.fire({ icon: 'success', title: '刪除成功', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+          } else {
+            Swal.fire('錯誤', res.message, 'error');
+          }
+        }
+      });
+    }
+
+    // 2. 成果牆功能
+    async function loadGalleryData() {
+      const data = await apiCall('getGalleryData');
+      document.getElementById('classCount').innerText = data.count || 0;
+      const container = document.getElementById('galleryContainer');
+      
+      if (!data.records || data.records.length === 0) {
+        container.innerHTML = `<div class="col w-100 text-center text-muted py-5">目前無資料</div>`;
+        return;
+      }
+      
+      let html = '';
+      data.records.forEach(item => {
+        let dateStr = item.date;
+        try { dateStr = new Date(item.date).toLocaleDateString('zh-TW'); } catch(e){}
+        const worksheetBtn = item.worksheetUrl ? `<a href="${item.worksheetUrl}" target="_blank" class="btn btn-sm btn-outline-success">學習單</a>` : '';
+        const imgSrc = item.photoUrl || 'https://via.placeholder.com/600x400?text=No+Image';
+        html += `
+          <div class="col">
+            <div class="card h-100 result-card">
+              <img src="${imgSrc}" class="card-img-top" loading="lazy">
+              <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                  <h5 class="fw-bold text-primary">${item.className} 班</h5>
+                  <span class="badge bg-light text-dark">${item.method}</span>
+                </div>
+                <h6>${item.bookTitle}</h6>
+                <p class="text-truncate-2 text-muted small">${item.content}</p>
+                <div class="d-flex justify-content-between mt-3 align-items-center">
+                  <small>${dateStr}</small>
+                  <div>${worksheetBtn}<a href="${item.originalPhotoUrl}" target="_blank" class="btn btn-sm btn-outline-primary ms-1">大圖</a></div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      });
+      container.innerHTML = html;
+    }
+
+    // 3. 上傳功能
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const loading = document.getElementById('loadingOverlay');
+      loading.style.display = 'flex';
+      
+      const formData = {
+        className: document.getElementById('className').value,
+        date: document.getElementById('date').value,
+        method: document.getElementById('method').value,
+        bookTitle: document.getElementById('bookTitle').value,
+        content: document.getElementById('content').value
+      };
+
+      const photoFile = document.getElementById('photoFile').files[0];
+      if (photoFile) {
+        const r = await fileToDataURL(photoFile);
+        formData.photoData = r.data; formData.photoName = r.name;
+      }
+      
+      const wsFile = document.getElementById('worksheetFile').files[0];
+      if (wsFile) {
+        const r = await fileToDataURL(wsFile);
+        formData.worksheetData = r.data; formData.worksheetName = r.name;
+      }
+
+      const res = await apiCall('processForm', formData);
+      loading.style.display = 'none';
+      
+      if(res.status === 'success') {
+        Swal.fire('成功', res.message, 'success').then(() => {
+          document.getElementById('uploadForm').reset();
+          loadGalleryData(); 
+        });
+      } else {
+        Swal.fire('失敗', res.message, 'error');
+      }
+    });
+
+    function fileToDataURL(file) {
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve({ data: e.target.result, name: file.name });
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // 4. 後台管理
+    async function performLogin() {
+      const pwd = document.getElementById('adminPassword').value;
+      const isValid = await apiCall('checkLogin', { password: pwd });
+      if (isValid) {
+        document.getElementById('adminLoginScreen').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        loadAdminData();
+        loadMethods();
+      } else {
+        Swal.fire('錯誤', '密碼不正確', 'error');
+      }
+    }
+
+    function logout() {
+      document.getElementById('adminPanel').style.display = 'none';
+      document.getElementById('adminLoginScreen').style.display = 'flex';
+      document.getElementById('adminPassword').value = '';
+    }
+
+    async function loadAdminData() {
+      const tbody = document.querySelector('#adminTable tbody');
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center">載入中...</td></tr>';
+      const data = await apiCall('getAdminData');
+      adminDataCache = data;
+      renderAdminTable(data);
+    }
+
+    function renderAdminTable(data) {
+      const tbody = document.querySelector('#adminTable tbody');
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">無資料</td></tr>';
+        return;
+      }
+      
+      let html = '';
+      data.forEach(row => {
+        let dateValue = row.date;
+        try {
+           const d = new Date(row.date);
+           const year = d.getFullYear();
+           const month = String(d.getMonth() + 1).padStart(2, '0');
+           const day = String(d.getDate()).padStart(2, '0');
+           if(!isNaN(year)) dateValue = `${year}-${month}-${day}`;
+        } catch(e) {}
+
+        html += `
+          <tr>
+            <td>${row.className}</td>
+            <td>${dateValue}</td>
+            <td>${row.method}</td>
+            <td>${row.bookTitle}</td>
+            <td title="${row.content}" class="text-truncate-2" style="max-width: 200px;">${row.content}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary mb-1" onclick="openEditModal('${row.rowIndex}', '${row.className}', '${dateValue}', '${row.method}', '${row.bookTitle}', \`${row.content.replace(/`/g, '\\`')}\`)"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-danger mb-1" onclick="deleteItem(${row.rowIndex})"><i class="bi bi-trash"></i></button>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+
+    function openEditModal(rowIndex, className, date, method, book, content) {
+      document.getElementById('editRowIndex').value = rowIndex;
+      document.getElementById('editClass').value = className;
+      document.getElementById('editDate').value = date;
+      document.getElementById('editMethod').value = method;
+      document.getElementById('editBook').value = book;
+      document.getElementById('editContent').value = content;
+      editModal.show();
+    }
+
+    async function submitEdit() {
+      const data = {
+        rowIndex: document.getElementById('editRowIndex').value,
+        className: document.getElementById('editClass').value,
+        date: document.getElementById('editDate').value,
+        method: document.getElementById('editMethod').value,
+        bookTitle: document.getElementById('editBook').value,
+        content: document.getElementById('editContent').value
+      };
+
+      document.getElementById('loadingOverlay').style.display = 'flex';
+      editModal.hide();
+
+      const res = await apiCall('updateRecord', data);
+      document.getElementById('loadingOverlay').style.display = 'none';
+      if (res.status === 'success') {
+        Swal.fire('更新成功', '', 'success');
+        loadAdminData(); loadGalleryData();
+      } else {
+        Swal.fire('錯誤', res.message, 'error');
+      }
+    }
+
+    function deleteItem(rowIndex) {
+      Swal.fire({
+        title: '確定刪除?',
+        text: "刪除後無法復原！",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: '是的，刪除它'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          document.getElementById('loadingOverlay').style.display = 'flex';
+          const res = await apiCall('deleteRecord', { rowIndex: rowIndex });
+          document.getElementById('loadingOverlay').style.display = 'none';
+          if (res.status === 'success') {
+            Swal.fire('已刪除', '', 'success');
+            loadAdminData(); loadGalleryData();
+          } else {
+            Swal.fire('錯誤', res.message, 'error');
+          }
+        }
+      });
+    }
+
+    function exportToCSV() {
+      if (adminDataCache.length === 0) return Swal.fire('無資料', '目前沒有資料可匯出', 'info');
+      let csvContent = "\uFEFF班級,實施日期,實施方式,閱讀書目,聊書內容,照片連結,學習單連結\n";
+      adminDataCache.forEach(row => {
+        const cleanContent = `"${row.content.replace(/"/g, '""').replace(/\n/g, ' ')}"`;
+        const cleanBook = `"${row.bookTitle.replace(/"/g, '""')}"`;
+        let dateStr = row.date;
+        try { dateStr = new Date(row.date).toLocaleDateString('zh-TW'); } catch(e){}
+        csvContent += `${row.className},${dateStr},${row.method},${cleanBook},${cleanContent},${row.photoUrl},${row.worksheetUrl}\n`;
+      });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
+      link.download = `聊書成果匯出_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+    }
+  </script>
+</body>
+</html>
